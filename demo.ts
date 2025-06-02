@@ -1,86 +1,132 @@
 #!/usr/bin/env tsx
 
-import { gaussianKnowledgeGraphPlugin } from "./dist/index.js";
+/**
+ * Demo script for loading TolueneEnergy.log into ElizaOS knowledge graph
+ * Following the Bio x AI Hackathon roadmap for Gaussian 16 plugin
+ */
 
-// Mock runtime for demonstration
-const mockRuntime = {
-    messageManager: {
-        createMemory: async (memory: any) => {
-            console.log("📝 Created memory:", memory.content.text);
-        }
-    },
-    getService: (name: string) => {
+import { resolve } from "path";
+import { readFileSync } from "fs";
+import { gaussianKnowledgeGraphPlugin } from "./src/index.js";
+
+// Mock ElizaOS runtime for demonstration
+class MockRuntime {
+    private knowledgeGraph: string[] = [];
+
+    getService(name: string) {
         if (name === "knowledge") {
             return {
                 addKnowledge: async (data: any) => {
-                    console.log("💾 Added to knowledge graph:", data.metadata.source);
-                    console.log("📊 Format:", data.format);
-                },
-                query: async (query: string) => {
-                    console.log("🔍 SPARQL Query:", query);
-                    return [{ title: "Sample Result", scf_energy: "-40.52", method: "B3LYP" }];
-                },
-                search: async (query: string, options: any) => {
-                    console.log("🔍 Natural Language Query:", query);
-                    return [
-                        { title: "Methane B3LYP Calculation", scf_energy: "-40.52", method: "B3LYP", basis_set: "6-31G(d)" },
-                        { title: "Benzene B3LYP Calculation", scf_energy: "-232.24", method: "B3LYP", basis_set: "6-31G(d)" }
-                    ];
+                    console.log("📊 Adding knowledge to graph:");
+                    console.log(`  Format: ${data.format}`);
+                    console.log(`  Source: ${data.metadata.source}`);
+                    console.log(`  Parser: ${data.metadata.parser}`);
+                    
+                    // Count triples
+                    const tripleCount = (data.content.match(/\./g) || []).length;
+                    console.log(`  Triples: ${tripleCount}`);
+                    
+                    this.knowledgeGraph.push(data.content);
+                    return { success: true, triples: tripleCount };
                 }
             };
         }
         return null;
-    },
-    registerService: (name: string, service: any) => {
-        console.log(`✅ Registered service: ${name}`);
     }
-};
 
-console.log("🧪 Gaussian Knowledge Graph Plugin Demo");
-console.log("=========================================\n");
+    messageManager = {
+        createMemory: async (memory: any) => {
+            console.log("💬 Agent Response:", memory.content.text);
+        }
+    };
 
-console.log("📦 Plugin Details:");
-console.log(`Name: ${gaussianKnowledgeGraphPlugin.name}`);
-console.log(`Description: ${gaussianKnowledgeGraphPlugin.description}`);
-console.log(`Actions: ${gaussianKnowledgeGraphPlugin.actions.length}`);
-console.log(`Services: ${gaussianKnowledgeGraphPlugin.services.length}\n`);
-
-console.log("⚡ Available Actions:");
-gaussianKnowledgeGraphPlugin.actions.forEach((action, i) => {
-    console.log(`${i + 1}. ${action.name}: ${action.description}`);
-    console.log(`   Aliases: ${action.similes.join(", ")}\n`);
-});
-
-console.log("🔧 Available Services:");
-gaussianKnowledgeGraphPlugin.services.forEach((service, i) => {
-    console.log(`${i + 1}. ${service.serviceType} service\n`);
-});
-
-console.log("🧬 Generated Knowledge Graph Sample:");
-console.log("=====================================");
-console.log(`
-@prefix ontocompchem: <http://www.theworldavatar.com/ontology/ontocompchem/> .
-@prefix dcterms: <http://purl.org/dc/terms/> .
-
-<https://example.org/gaussian/sample_methane.log> a ontocompchem:QuantumCalculation ;
-    dcterms:title "sample_methane.log" ;
-    ontocompchem:hasConverged false ;
-    ex:parserVersion "0.1.0" .
-`);
-
-// Initialize services
-console.log("🚀 Initializing services...");
-for (const service of gaussianKnowledgeGraphPlugin.services) {
-    try {
-        await service.initialize(mockRuntime as any);
-    } catch (error) {
-        console.log(`⚠️  Service initialization skipped: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    listKnowledge() {
+        return this.knowledgeGraph;
     }
 }
 
-console.log("\n✨ Demo completed! The Gaussian Knowledge Graph plugin is ready for Bio x AI Hackathon!");
-console.log("\n🎯 Next Steps:");
-console.log("1. Integrate with Eliza OS agent runtime");
-console.log("2. Upload Gaussian logfiles for processing");
-console.log("3. Query the quantum chemistry knowledge graph");
-console.log("4. Chat with Dr. Gaussian about computational chemistry!"); 
+async function demonstrateGaussianKGPlugin() {
+    console.log("🧪 Bio x AI Hackathon - Gaussian Knowledge Graph Demo");
+    console.log("=" .repeat(60));
+    
+    // Step 1: Load the plugin
+    console.log("\n1️⃣  Loading Gaussian KG Plugin...");
+    console.log(`   Plugin: ${gaussianKnowledgeGraphPlugin.name}`);
+    console.log(`   Actions: ${gaussianKnowledgeGraphPlugin.actions?.length || 0}`);
+    console.log(`   Services: ${gaussianKnowledgeGraphPlugin.services?.length || 0}`);
+
+    // Step 2: Simulate parsing the TolueneEnergy.log file
+    console.log("\n2️⃣  Processing TolueneEnergy.log...");
+    
+    const mockRuntime = new MockRuntime();
+    const parseAction = gaussianKnowledgeGraphPlugin.actions?.find(
+        action => action.name === "PARSE_GAUSSIAN_FILE"
+    );
+
+    if (!parseAction) {
+        console.error("❌ Parse action not found!");
+        return;
+    }
+
+    // Create a mock message simulating user input
+    const mockMessage = {
+        userId: "user123",
+        roomId: "hackathon-room",
+        content: {
+            url: resolve("example_logs/TolueneEnergy.log"),
+            text: "Parse this Gaussian file: example_logs/TolueneEnergy.log",
+            metadata: {
+                filename: "TolueneEnergy.log",
+                timestamp: "2017-02-23T14:06:39Z",
+                software_version: "G16RevA.03"
+            }
+        }
+    };
+
+    const mockState = {};
+
+    // Step 3: Execute the parse action
+    console.log("\n3️⃣  Executing parse action...");
+    try {
+        const success = await parseAction.handler(
+            mockRuntime as any,
+            mockMessage as any,
+            mockState as any
+        );
+
+        if (success) {
+            console.log("\n✅ Success! Toluene calculation loaded into knowledge graph");
+            
+            // Step 4: Demonstrate knowledge querying
+            console.log("\n4️⃣  Knowledge Graph Summary:");
+            const knowledge = mockRuntime.listKnowledge();
+            console.log(`   Graphs stored: ${knowledge.length}`);
+            
+            if (knowledge.length > 0) {
+                const rdf = knowledge[0];
+                const moleculeMatch = rdf.match(/cheminf:hasAtom/g);
+                const energyMatch = rdf.match(/ontocompchem:hasSCFEnergy/g);
+                const freqMatch = rdf.match(/ontocompchem:hasFrequency/g);
+                
+                console.log(`   Atoms: ${moleculeMatch?.length || 0}`);
+                console.log(`   Energies: ${energyMatch?.length || 0}`);
+                console.log(`   Frequencies: ${freqMatch?.length || 0}`);
+            }
+
+            console.log("\n🎯 Demo completed successfully!");
+            console.log("\n📋 Next steps for hackathon:");
+            console.log("   • Deploy to ElizaOS instance");
+            console.log("   • Add SPARQL query interface");
+            console.log("   • Integrate with 3Dmol.js visualization");
+            console.log("   • Add batch processing for multiple files");
+            
+        } else {
+            console.error("❌ Failed to parse file");
+        }
+    } catch (error) {
+        console.error("❌ Error during demo:", error);
+    }
+}
+
+// Run the demo
+demonstrateGaussianKGPlugin().catch(console.error); 

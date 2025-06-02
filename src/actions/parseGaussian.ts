@@ -28,16 +28,35 @@ async function parseGaussianFile(
     metadata: any = {}
 ): Promise<{ success: boolean; message: string; data?: any }> {
     try {
-        // 1. Download the file using runtime services
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to download file: ${response.statusText}`);
-        }
+        let tempPath: string;
         
-        // Create temporary file
-        const tempPath = path.join(process.cwd(), `temp_${Date.now()}.log`);
-        const buffer = await response.arrayBuffer();
-        await fs.writeFile(tempPath, Buffer.from(buffer));
+        // Handle local files vs remote URLs
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('s3://')) {
+            // 1. Download the file using runtime services for remote files
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to download file: ${response.statusText}`);
+            }
+            
+            // Create temporary file
+            tempPath = path.join(process.cwd(), `temp_${Date.now()}.log`);
+            const buffer = await response.arrayBuffer();
+            await fs.writeFile(tempPath, Buffer.from(buffer));
+        } else {
+            // Handle local file paths (for demo/testing)
+            if (url.startsWith('file://')) {
+                tempPath = url.replace('file://', '');
+            } else {
+                tempPath = path.resolve(url);
+            }
+            
+            // Verify file exists
+            try {
+                await fs.access(tempPath);
+            } catch {
+                throw new Error(`File not found: ${tempPath}`);
+            }
+        }
 
         // 2. Call the Python parser
         const pythonScript = path.join(process.cwd(), "py", "parse_gaussian.py");
@@ -62,8 +81,10 @@ async function parseGaussianFile(
             });
         }
 
-        // 4. Clean up temporary file
-        await fs.unlink(tempPath);
+        // 4. Clean up temporary file only if we created it
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('s3://')) {
+            await fs.unlink(tempPath);
+        }
 
         return {
             success: true,
