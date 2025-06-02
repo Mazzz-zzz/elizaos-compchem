@@ -9,7 +9,7 @@ A professional-grade plugin for [Eliza OS](https://eliza.how/) that parses Gauss
 ![Node.js](https://img.shields.io/badge/node.js-23+-green.svg)
 ![Eliza OS](https://img.shields.io/badge/Eliza_OS-Compatible-purple.svg)
 
-## 🚀 Features
+Convert Gaussian 16 quantum chemistry calculations into semantic knowledge graphs using standard ontologies. Enables AI agents to understand and reason about computational chemistry data through natural language.
 
 - **🧪 Parse Gaussian Logfiles**: Extract computational chemistry data from Gaussian 16 output files
 - **🧠 Semantic Knowledge Graphs**: Convert quantum chemistry data to RDF using standard ontologies

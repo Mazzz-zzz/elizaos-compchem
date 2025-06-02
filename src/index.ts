@@ -1,24 +1,21 @@
-import { Plugin } from "./types/mock-eliza.js";
+import type { Plugin } from "./types/eliza-core.js";
 import { parseGaussianAction } from "./actions/parseGaussian.js";
 import { queryKnowledgeGraphAction } from "./actions/queryKnowledgeGraph.js";
-import { gaussianParserService } from "./services/gaussianParser.js";
+import { GaussianParserService } from "./services/gaussianParser.js";
 
-export const gaussianKnowledgeGraphPlugin: Plugin = {
+const gaussianKnowledgeGraphPlugin: Plugin = {
     name: "gaussian-kg",
-    description: "Parse Gaussian 16 quantum chemistry logfiles into knowledge graphs",
+    description: "Parse Gaussian 16 quantum chemistry logfiles into knowledge graphs using standard ontologies (OntoCompChem, CHEMINF, PROV-O)",
     actions: [
         parseGaussianAction,
         queryKnowledgeGraphAction,
     ],
-    services: [
-        gaussianParserService,
-    ],
+    services: [GaussianParserService],
     evaluators: [],
     providers: [],
-    clients: [],
 };
 
 export default gaussianKnowledgeGraphPlugin;
 
 // Export individual components for modularity
-export { parseGaussianAction, queryKnowledgeGraphAction, gaussianParserService }; 
+export { parseGaussianAction, queryKnowledgeGraphAction, GaussianParserService }; 

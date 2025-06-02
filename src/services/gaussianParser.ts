@@ -1,56 +1,55 @@
-import { Service, IAgentRuntime, ServiceType } from "../types/mock-eliza.js";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import * as path from "path";
+import { IAgentRuntime, Service } from "../types/eliza-core.js";
 
-const execFileAsync = promisify(execFile);
-
-export interface GaussianParserService extends Service {
-    parseGaussianFile(
-        filePath: string,
-        metadata?: Record<string, any>
-    ): Promise<string>;
+export class GaussianParserService extends Service {
+    static serviceType = "gaussian-parser";
     
-    validateGaussianFile(filePath: string): Promise<boolean>;
+    capabilityDescription = "Enables the agent to parse Gaussian 16 quantum chemistry logfiles into RDF knowledge graphs using standard ontologies";
     
-    getSupportedFormats(): string[];
-}
+    private runtime!: IAgentRuntime;
 
-class GaussianParserServiceImpl implements GaussianParserService {
-    static serviceType: ServiceType = ServiceType.OTHER;
-
-    async initialize(runtime: IAgentRuntime): Promise<void> {
-        // Initialize the service
-        console.log("Initializing Gaussian Parser Service");
+    static async start(runtime: IAgentRuntime): Promise<GaussianParserService> {
+        const service = new GaussianParserService();
+        service.runtime = runtime;
         
-        // Verify Python and required packages are available
-        try {
-            await execFileAsync("python", ["-c", "import cclib, rdflib, pydantic; print('Dependencies OK')"]);
-            console.log("Python dependencies verified");
-        } catch (error) {
-            console.error("Python dependencies not available:", error);
-            throw new Error("Required Python packages (cclib, rdflib, pydantic) are not installed");
+        // Initialize service with runtime settings
+        const debugMode = runtime.getSetting("GAUSSIAN_PARSER_DEBUG") === "true";
+        const pythonPath = runtime.getSetting("GAUSSIAN_PARSER_PYTHON_PATH") || "python";
+        const maxFileSize = runtime.getSetting("GAUSSIAN_PARSER_MAX_FILE_SIZE") || "500";
+        
+        if (debugMode) {
+            console.log("🧪 Gaussian Parser Service initialized with debug mode");
+            console.log(`   Python path: ${pythonPath}`);
+            console.log(`   Max file size: ${maxFileSize}MB`);
         }
+        
+        return service;
     }
 
-    async parseGaussianFile(
-        filePath: string,
-        metadata: Record<string, any> = {}
-    ): Promise<string> {
+    async stop(): Promise<void> {
+        // Clean up any resources if needed
+        console.log("🧪 Gaussian Parser Service stopped");
+    }
+
+    async parseGaussianFile(filePath: string, metadata: any = {}): Promise<string> {
+        // This method can be called by other services or actions
+        const { execFile } = await import("child_process");
+        const { promisify } = await import("util");
+        const path = await import("path");
+        
+        const execFileAsync = promisify(execFile);
+        const pythonScript = path.join(process.cwd(), "py", "parse_gaussian.py");
+        
         try {
-            const pythonScript = path.join(process.cwd(), "py", "parse_gaussian.py");
-            
             const { stdout: rdfOutput } = await execFileAsync("python", [
                 pythonScript,
                 filePath,
-                JSON.stringify(metadata),
-                "--format", "turtle"
+                JSON.stringify(metadata)
             ]);
-
+            
             return rdfOutput;
         } catch (error) {
-            console.error("Error parsing Gaussian file:", error);
-            throw new Error(`Failed to parse Gaussian file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            console.error("Error in Gaussian parser service:", error);
+            throw error;
         }
     }
 
@@ -82,20 +81,7 @@ class GaussianParserServiceImpl implements GaussianParserService {
     }
 
     // Required Service interface methods
-    get serviceType(): ServiceType {
-        return ServiceType.OTHER;
+    get serviceType(): string {
+        return "gaussian-parser";
     }
-}
-
-export const gaussianParserService: Service = {
-    serviceType: ServiceType.OTHER,
-    initialize: async (runtime: IAgentRuntime) => {
-        const service = new GaussianParserServiceImpl();
-        await service.initialize(runtime);
-        
-        // Register the service with the runtime
-        runtime.registerService("gaussianParser", service);
-        
-        console.log("Gaussian Parser Service registered successfully");
-    },
-}; 
+} 

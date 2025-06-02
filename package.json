@@ -1,7 +1,7 @@
 {
-  "name": "@elizaos-plugins/plugin-gaussian-kg",
+  "name": "@elizaos/plugin-gaussian-kg",
   "version": "0.1.0",
-  "description": "Eliza OS plugin for parsing Gaussian 16 quantum chemistry logfiles into a knowledge graph",
+  "description": "ElizaOS plugin for parsing Gaussian 16 quantum chemistry logfiles into a knowledge graph",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -17,16 +17,38 @@
   "keywords": [
     "eliza",
     "elizaos",
+    "elizaos-plugin",
     "plugin",
     "quantum-chemistry",
     "gaussian",
     "knowledge-graph",
     "rdf",
     "bioai",
-    "chemistry"
+    "chemistry",
+    "ai"
   ],
   "author": "Bio x AI Hackathon Team",
   "license": "MIT",
+  "agentConfig": {
+    "pluginType": "elizaos:plugin:1.0.0",
+    "pluginParameters": {
+      "GAUSSIAN_PARSER_DEBUG": {
+        "type": "boolean",
+        "description": "Enable debug logging for Gaussian parser",
+        "default": false
+      },
+      "GAUSSIAN_PARSER_PYTHON_PATH": {
+        "type": "string", 
+        "description": "Path to Python executable for Gaussian parsing",
+        "default": "python"
+      },
+      "GAUSSIAN_PARSER_MAX_FILE_SIZE": {
+        "type": "string",
+        "description": "Maximum Gaussian file size in MB",
+        "default": "500"
+      }
+    }
+  },
   "devDependencies": {
     "@types/jest": "^29.0.0",
     "@types/node": "^22.15.0",
@@ -40,8 +62,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@elizaos/plugin-bootstrap": "1.0.2",
-    "@elizaos/plugin-knowledge": "^1.0.0"
+    "@elizaos/core": "*"
   },
   "publishConfig": {
     "access": "public"
@@ -50,9 +71,20 @@
     "dist",
     "py",
     "characters",
-    "README.md"
+    "README.md",
+    "assets"
   ],
   "engines": {
     "node": ">=23.0.0"
-  }
+  },
+  "topics": [
+    "elizaos-plugins",
+    "quantum-chemistry", 
+    "gaussian",
+    "knowledge-graph",
+    "bioai",
+    "chemistry",
+    "ai",
+    "hackathon"
+  ]
 }

@@ -5,7 +5,7 @@ import {
     Memory,
     State,
     type Action,
-} from "../types/mock-eliza.js";
+} from "../types/eliza-core.js";
 
 interface QueryKnowledgeGraphContent extends Content {
     query: string;

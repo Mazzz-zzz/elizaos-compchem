@@ -7,7 +7,7 @@
 
 import { resolve } from "path";
 import { readFileSync } from "fs";
-import { gaussianKnowledgeGraphPlugin } from "./src/index.js";
+import gaussianKnowledgeGraphPlugin from "./src/index.js";
 
 // Mock ElizaOS runtime for demonstration
 class MockRuntime {
