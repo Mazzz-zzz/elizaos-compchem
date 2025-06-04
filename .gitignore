@@ -65,3 +65,4 @@ tests/data/*.out
 # Development
 .eslintcache
 *.tgz 
+eliza-starter/
